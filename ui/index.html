@@ -124,6 +124,15 @@
   }
   .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); font-weight: 600; }
   .hint { color: var(--muted); font-size: 12.5px; }
+  .saved { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+  .savedlist { flex-basis: 100%; max-height: 320px; overflow-y: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+  .saveditem { display: flex; align-items: center; gap: 12px; width: 100%; text-align: right; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 10px 14px; font: inherit; color: var(--ink); cursor: pointer; }
+  .saveditem:last-child { border-bottom: 0; }
+  .saveditem:hover, .saveditem:focus-visible { background: var(--accent-soft); outline: none; }
+  .saveditem .when { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+  .saveditem .what { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+  .saveditem .tag { font-size: 11.5px; color: var(--ok); white-space: nowrap; }
+  .savedlist .empty { padding: 12px 14px; color: var(--muted); font-size: 13px; margin: 0; }
 
   .btn {
     font: inherit; font-weight: 600; border-radius: 10px; border: 1px solid var(--line);
@@ -311,6 +320,14 @@
         <div class="formats">m4a · mp3 · wav · ogg · opus · flac · aac · mp4</div>
       </div>
       <input type="file" id="picker" hidden accept="audio/*,video/*,.m4a,.mp3,.wav,.ogg,.oga,.opus,.flac,.aac,.wma,.amr,.3gp,.mp4,.mov,.webm,.mkv">
+      <div class="saved">
+        <button class="btn sm" id="savedbtn" aria-expanded="false">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h7M9 17h5"/></svg>
+          פתיחת תמלול שמור
+        </button>
+        <span class="hint">כדי לקרוא אותו שוב, או ליצור לו כותרת, סיכום ומשימות</span>
+        <div class="savedlist" id="savedlist" role="list" hidden></div>
+      </div>
     </section>
 
     <!-- 2. ready -->
@@ -422,7 +439,7 @@
       <div class="done-head">
         <svg class="check" viewBox="0 0 52 52" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="26" cy="26" r="24"/><path d="M15 27l7 7 15-16"/></svg>
         <div>
-          <h2>התמלול הושלם</h2>
+          <h2 id="dhead">התמלול הושלם</h2>
           <p id="dsub"></p>
         </div>
       </div>
@@ -519,6 +536,7 @@ function show(v) {
     updateExtras();
   }
   if (v === 'work') Scene.start(); else Scene.stop();
+  if (v !== 'pick') toggleSaved(false);
 }
 
 function toast(msg) {
@@ -658,7 +676,7 @@ function updateCost(kinds) {
   let tokens = null, speakers = false, mins = null;
   if (view === 'done' && result && result.text) {
     tokens = result.text.length * 0.75;
-    speakers = !!result.speakers;
+    speakers = !!result.speakers && !result.saved;   // a saved transcript has no voice data: sent once
     mins = result.text.length / 950;
   } else if (view === 'ready' && audioSecs) {
     mins = audioSecs / 60;
@@ -870,6 +888,7 @@ async function finish(s) {
   let data;
   try { data = await api('/result'); } catch (e) { fail(e.message); return; }
   result = data;
+  $('#dhead').textContent = data.saved ? 'תמלול שמור' : 'התמלול הושלם';
   const words = data.text.replace(/\] דובר \d+:/g, ']').split(/\s+/).filter((w) => w && !/^\[\d/.test(w)).length;
   const lines = data.text.split('\n').filter(Boolean).length;
   $('#text').value = data.text;
@@ -880,8 +899,10 @@ async function finish(s) {
   updateExtras();
   // keep the done view short once there is a summary; the options stay one click away
   if (data.insights) $('#extras').open = false;
+  else if (data.saved) $('#extras').open = true;   // opened a saved transcript, most likely to make a summary
   $('#chips').innerHTML = '';
-  const chips = [['אורך ההקלטה', s.duration ? fmtTime(s.duration) : 'לא ידוע'], ['זמן תמלול', fmtTime(data.elapsed)], ['שורות', lines], ['מילים', words.toLocaleString('he-IL')]];
+  const chips = data.saved ? [] : [['אורך ההקלטה', s.duration ? fmtTime(s.duration) : 'לא ידוע'], ['זמן תמלול', fmtTime(data.elapsed)]];
+  chips.push(['שורות', lines], ['מילים', words.toLocaleString('he-IL')]);
   const pct = (x) => Math.round(x * 100) + '%';
   if (data.confidence != null) chips.push(['ביטחון בתמלול', pct(data.confidence), 'ממוצע הביטחון של מודל התמלול בכל משפט. זו הערכה של המודל עצמו, לא בדיקה מול טקסט נכון.']);
   if (data.speakers) chips.push(['דוברים', data.speakers]);
@@ -899,8 +920,69 @@ async function finish(s) {
     c.append(b);
     $('#chips').append(c);
   }
-  document.title = '✓ התמלול הושלם · מתמלל עברית';
+  document.title = (data.saved ? 'תמלול שמור' : '✓ התמלול הושלם') + ' · מתמלל עברית';
 }
+
+/* ------------------------------------------------------------ saved transcripts */
+
+// "2026-01-31_09-05-00" -> "31.01.2026 09:05"
+function fmtStamp(stamp) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})/.exec(stamp);
+  return m ? `${m[3]}.${m[2]}.${m[1]} ${m[4]}:${m[5]}` : stamp;
+}
+async function toggleSaved(open) {
+  const list = $('#savedlist');
+  list.hidden = !open;
+  $('#savedbtn').setAttribute('aria-expanded', String(open));
+  if (!open) return;
+  list.innerHTML = '<p class="empty">טוען…</p>';
+  let items;
+  try { items = (await api('/saved')).items; } catch (e) { list.innerHTML = ''; toggleSaved(false); toast(e.message); return; }
+  list.innerHTML = '';
+  if (!items.length) {
+    const p = document.createElement('p');
+    p.className = 'empty';
+    p.textContent = 'עדיין אין תמלולים שמורים.';
+    list.append(p);
+    return;
+  }
+  for (const it of items) {
+    const b = document.createElement('button');
+    b.className = 'saveditem';
+    b.setAttribute('role', 'listitem');
+    const when = document.createElement('bdi');
+    when.className = 'when';
+    when.dir = 'ltr';
+    when.textContent = fmtStamp(it.date);
+    const what = document.createElement('span');
+    what.className = 'what';
+    what.textContent = it.title || it.file;
+    what.title = it.title ? it.title + ' (' + it.file + ')' : it.file;
+    b.append(when, what);
+    if (it.summary) {
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = '✓ יש סיכום';
+      b.append(tag);
+    }
+    b.addEventListener('click', () => openSaved(it.id, b));
+    list.append(b);
+  }
+}
+async function openSaved(id, btn) {
+  btn.disabled = true;
+  try {
+    const r = await api('/load', { id });
+    toggleSaved(false);
+    uploaded = null;
+    finish({ job: r.job, file: r.file, duration: null });
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+$('#savedbtn').addEventListener('click', () => toggleSaved($('#savedlist').hidden));
 
 function renderInsights(data) {
   const x = data.insights || null;

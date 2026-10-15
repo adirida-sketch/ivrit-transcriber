@@ -404,12 +404,14 @@ def apply_speaker_names(result, names):
                 return head + swap[p] + rest[len(p):]
         return line
 
-    txt, srt = Path(result["txt"]), Path(result["srt"])
+    txt = Path(result["txt"])
     lines = txt.read_text(encoding="utf-8").split("\n")
     txt.write_text("\n".join(relabel(ln, 11) if re.match(r"\[\d{2}:\d{2}:\d{2}\] ", ln) else ln
                              for ln in lines), encoding="utf-8")
-    srt.write_text("\n".join(relabel(ln, 0) for ln in srt.read_text(encoding="utf-8").split("\n")),
-                   encoding="utf-8")
+    if result.get("srt"):   # a saved transcript may have lost its .srt
+        srt = Path(result["srt"])
+        srt.write_text("\n".join(relabel(ln, 0) for ln in srt.read_text(encoding="utf-8").split("\n")),
+                       encoding="utf-8")
     new = {**result, "speaker_names": names}
     if new.get("insights"):
         # all names at once (a swap must not chain); a name is a whole word, optionally after
@@ -465,6 +467,45 @@ def rename_job_dir(result, title):
         if moved.get(k):
             moved[k] = str(new / Path(moved[k]).name)
     return moved
+
+
+def main_txt(folder):
+    """The transcript .txt in a job folder (not the summary), or None."""
+    found = sorted(p for p in folder.glob("*.txt") if not p.stem.endswith("_סיכום"))
+    return found[0] if found else None
+
+
+def saved_transcripts():
+    """The transcripts in Transcripts/, newest first, for the "open a saved transcript" list."""
+    out = []
+    if TRANSCRIPTS_DIR.is_dir():
+        for d in TRANSCRIPTS_DIR.iterdir():
+            txt = main_txt(d) if d.is_dir() else None
+            if txt:
+                stamp, _, title = d.name.partition(" - ")
+                out.append({"id": d.name, "date": stamp, "title": title, "file": txt.stem,
+                            "summary": txt.with_name(txt.stem + "_סיכום.txt").exists()})
+    return sorted(out, key=lambda x: x["id"], reverse=True)
+
+
+def load_saved(name):
+    """A result for a saved transcript (as if it had just finished), so the done view and /insights work on it."""
+    folder = TRANSCRIPTS_DIR / (name or "")
+    if not name or not folder.is_dir() or folder.resolve().parent != TRANSCRIPTS_DIR.resolve():
+        raise ValueError("התמלול לא נמצא")
+    txt = main_txt(folder)
+    if not txt:
+        raise ValueError("בתיקייה הזו אין קובץ תמלול")
+    srt, summary = txt.with_suffix(".srt"), txt.with_name(txt.stem + "_סיכום.txt")
+    names = speaker_names_from(txt)
+    audio = next((p.name for p in sorted(folder.iterdir()) if p.suffix.lower() in AUDIO_EXTS), txt.name)
+    result = {"txt": str(txt), "srt": str(srt) if srt.exists() else None, "elapsed": None, "saved": True,
+              "speaker_names": names or None, "speakers": len(names) or None,
+              "insights": None, "summary": None}
+    if summary.exists():
+        result["insights"] = insights.from_text(summary.read_text(encoding="utf-8"))
+        result["summary"] = str(summary)
+    return result, audio
 
 
 def clear_incoming():
@@ -534,6 +575,9 @@ class Handler(BaseHTTPRequestHandler):
             extra = {"speaker_samples": speaker_samples(result)} if result.get("speaker_names") else {}
             self.send_json({"text": Path(result["txt"]).read_text(encoding="utf-8"), **result, **extra})
 
+        elif url.path == "/saved":
+            self.send_json({"items": saved_transcripts()})
+
         elif url.path == "/settings":
             key = insights.load_key()
             self.send_json({"has_key": bool(key), "key_hint": insights.key_hint(key)})
@@ -592,6 +636,18 @@ class Handler(BaseHTTPRequestHandler):
                 new_control()
             threading.Thread(target=run_job, args=(job, path, beam, extras, num_speakers), daemon=True).start()
             self.send_json({"job": job})
+
+        elif url.path == "/load":
+            try:
+                result, audio = load_saved(self.read_json().get("id"))
+            except ValueError as e:
+                return self.send_json({"error": str(e)}, 404)
+            with LOCK:
+                if STATE["running"] or INSIGHTS_LOCK.locked():
+                    return self.send_json({"error": "המתמלל עסוק כרגע. נסו שוב בעוד רגע"}, 409)
+                job = STATE["job"] + 1
+                reset_state(job=job, file=audio, folder=str(Path(result["txt"]).parent), result=result)
+            self.send_json({"job": job, "file": audio})
 
         elif url.path == "/pause":
             set_paused(bool(self.read_json().get("paused")))

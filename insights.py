@@ -298,6 +298,37 @@ def analyze(transcript, kinds, key, lines=None, count=None, names=None):
     return out
 
 
+def from_text(text):
+    """The insights back from a summary file written by to_text() (to show a saved transcript)."""
+    text = text.replace("\r\n", "\n").strip("\n")
+    out = {}
+    m = re.match(r"כותרת: (.+)", text)
+    if m:
+        out["title"] = m.group(1).strip()
+    sm = re.search(r"(?:^|\n\n)סיכום\n-----\n", text)
+    tm = re.search(r"(?:^|\n\n)משימות להמשך\n-{12}\n", text)
+    if sm:
+        out["summary"] = text[sm.end():tm.start() if tm and tm.start() > sm.end() else len(text)].strip()
+    if tm:
+        tasks = []
+        for line in text[tm.end():].split("\n"):
+            m = re.match(r"\d+\. (.*)$", line.strip())
+            if not m:
+                continue
+            task, owner, due = m.group(1), "", ""
+            extra = re.search(r" \(((?:אחראי|עד): [^()]*)\)$", task)
+            if extra:
+                task = task[:extra.start()]
+                for part in extra.group(1).split(" · "):
+                    if part.startswith("אחראי: "):
+                        owner = part[len("אחראי: "):]
+                    elif part.startswith("עד: "):
+                        due = part[len("עד: "):]
+            tasks.append({"task": task, "owner": owner, "due": due})
+        out["tasks"] = tasks
+    return out or None
+
+
 def clean_name(name):
     """A speaker name safe for "[ts] name: text" lines; "" if unusable."""
     name = re.sub(r"[\x00-\x1f\x7f:\[\]]", " ", name or "")
