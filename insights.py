@@ -13,6 +13,7 @@ from pathlib import Path
 APP_DIR = Path(__file__).resolve().parent
 SETTINGS_FILE = APP_DIR / "settings.json"
 MODEL = "claude-opus-5-5"
+MAX_TOKENS = 64000
 KINDS = ("title", "summary", "tasks")
 KEYS_URL = "https://console.anthropic.com/settings/keys"
 
@@ -251,15 +252,18 @@ def analyze(transcript, kinds, key, lines=None, count=None, names=None):
     )
     anthropic, client = _client(key)
     try:
-        resp = client.beta.messages.create(
+        # Streamed, so a long call (thinking + one line_speakers entry per unsure line) gets room to finish:
+        # a 68 min call hit the old 16000 cap. Only the tokens actually used are billed.
+        with client.beta.messages.stream(
             model=MODEL,
-            max_tokens=16000,
+            max_tokens=MAX_TOKENS,
             betas=["server-side-fallback-2026-07-01"],
             fallbacks="default",
             output_config={"effort": "high" if lines else "medium", "format": {"type": "json_schema", "schema": schema}},
             system=SYSTEM,
             messages=[{"role": "user", "content": prompt}],
-        )
+        ) as stream:
+            resp = stream.get_final_message()
     except anthropic.APIError as e:
         raise InsightsError(_friendly(anthropic, e)) from e
     if resp.stop_reason == "refusal":
