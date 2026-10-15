@@ -1,0 +1,1257 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מתמלל עברית</title>
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface-2: #faf9f6;
+    --ink: #1c1d21;
+    --muted: #6b6f78;
+    --line: #e4e1da;
+    --accent: #4f46e5;
+    --accent-soft: #eceafd;
+    --wave: #0d9488;
+    --paper: #fffdf6;
+    --paper-line: #efe9d8;
+    --ok: #15803d;
+    --err: #c2410c;
+    --shadow: 0 1px 2px rgba(20, 20, 30, .05), 0 8px 30px rgba(20, 20, 30, .07);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111216;
+      --surface: #1a1c21;
+      --surface-2: #202228;
+      --ink: #ececf1;
+      --muted: #9a9fab;
+      --line: #2d3038;
+      --accent: #8f8aff;
+      --accent-soft: #2a2850;
+      --wave: #2dd4bf;
+      --paper: #23252b;
+      --paper-line: #2e3139;
+      --ok: #4ade80;
+      --err: #fb923c;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 30px rgba(0, 0, 0, .35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #111216; --surface: #1a1c21; --surface-2: #202228; --ink: #ececf1; --muted: #9a9fab;
+    --line: #2d3038; --accent: #8f8aff; --accent-soft: #2a2850; --wave: #2dd4bf; --paper: #23252b;
+    --paper-line: #2e3139; --ok: #4ade80; --err: #fb923c;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 30px rgba(0, 0, 0, .35);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.55 "Segoe UI", "Segoe UI Variable", Rubik, Arial, sans-serif;
+    min-height: 100vh;
+    padding: 28px 16px 40px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .logo {
+    width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+    background: var(--accent); color: #fff; flex: none;
+  }
+  header h1 { font-size: 20px; margin: 0; font-weight: 650; letter-spacing: -.01em; }
+  header p { margin: 0; color: var(--muted); font-size: 13px; }
+  header .btn { margin-inline-start: auto; font-size: 13.5px; font-weight: 500; padding: 7px 12px; white-space: nowrap; flex: none; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    box-shadow: var(--shadow); padding: 24px;
+  }
+  [hidden] { display: none !important; }
+
+  .banner {
+    display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; padding: 12px 14px;
+    border-radius: 12px; border: 1px solid color-mix(in srgb, var(--err) 35%, transparent);
+    background: color-mix(in srgb, var(--err) 9%, var(--surface)); font-size: 13.5px;
+  }
+  .banner svg { color: var(--err); flex: none; margin-top: 2px; }
+  .banner b { display: block; }
+  .banner span { color: var(--muted); }
+
+  /* ---------- drop zone ---------- */
+  .drop {
+    border: 2px dashed var(--line); border-radius: 14px; padding: 52px 20px;
+    text-align: center; cursor: pointer; transition: border-color .15s, background .15s;
+    background: var(--surface-2);
+  }
+  .drop:hover, .drop:focus-visible { border-color: var(--accent); outline: none; }
+  body.dragging .drop { border-color: var(--accent); background: var(--accent-soft); }
+  .drop .icon { color: var(--accent); margin-bottom: 10px; }
+  body.dragging .drop .icon { animation: bob .8s ease-in-out infinite alternate; }
+  @keyframes bob { to { transform: translateY(-6px); } }
+  .drop h2 { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
+  .drop p { margin: 0; color: var(--muted); font-size: 13.5px; }
+  .drop .formats { margin-top: 14px; font-size: 12px; color: var(--muted); direction: ltr; }
+
+  /* ---------- file chip ---------- */
+  .file {
+    display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2);
+  }
+  .file .ficon {
+    width: 42px; height: 42px; border-radius: 10px; background: var(--accent-soft);
+    color: var(--accent); display: grid; place-items: center; flex: none;
+  }
+  .file .meta { min-width: 0; flex: 1; }
+  .file .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; text-align: right; }
+  .file .sub { color: var(--muted); font-size: 13px; }
+  .upbar { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .upbar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+
+  .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+  .spacer { flex: 1; }
+
+  .seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+  .seg button {
+    border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13.5px;
+    padding: 6px 14px; border-radius: 7px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); font-weight: 600; }
+  .hint { color: var(--muted); font-size: 12.5px; }
+
+  .btn {
+    font: inherit; font-weight: 600; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink); padding: 9px 16px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px; transition: transform .08s, background .15s;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; padding: 11px 26px; font-size: 16px; }
+  .btn.primary:hover { filter: brightness(1.07); }
+  .btn:disabled { opacity: .45; cursor: default; filter: none; }
+  .link { background: none; border: 0; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; padding: 0; }
+  .btn.sm { padding: 6px 12px; font-size: 13px; font-weight: 600; }
+
+  /* ---------- extra options (title / summary / tasks) ---------- */
+  .extras { margin-top: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+  .extras > summary { cursor: pointer; padding: 11px 14px; font-weight: 600; font-size: 14px; list-style: none; display: flex; align-items: center; gap: 8px; border-radius: 12px; }
+  .extras > summary::-webkit-details-marker { display: none; }
+  .extras > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .extras > summary .chev { color: var(--muted); transition: transform .15s; }
+  .extras[open] > summary .chev { transform: rotate(180deg); }
+  .extras .count { font-weight: 500; color: var(--accent); font-size: 12.5px; }
+  .extras .xbody { padding: 0 14px 14px; }
+  .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+  .opt select { margin-top: 6px; font: inherit; font-size: 12.5px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+  #xslot-done .pre-only { display: none; }
+  .badge { font-style: normal; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; margin-inline-start: 6px; vertical-align: 1px; white-space: nowrap; }
+  .badge.local { color: var(--ok); background: color-mix(in srgb, var(--ok) 13%, transparent); }
+  .badge.cloud { color: var(--accent); background: var(--accent-soft); }
+  .legend { margin-top: 10px; font-size: 12.5px; color: var(--muted); display: grid; gap: 5px; }
+  .legend .badge { margin-inline: 0 6px; }
+  .badge svg { vertical-align: -2px; margin-inline-end: 4px; }
+  .ico { display: inline-flex; vertical-align: -2px; margin-inline-start: 6px; font-style: normal; }
+  .ico.local { color: var(--ok); }
+  .ico.cloud { color: var(--accent); }
+  header p .ico { margin-inline: 0 3px; }
+  .chip.tip { cursor: help; border-style: dashed; }
+  .names { border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); padding: 12px 14px; margin-bottom: 14px; }
+  .names-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .namerow { display: flex; gap: 10px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+  .namerow input { width: 170px; font: inherit; font-size: 13.5px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+  .namerow input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .namerow .said { color: var(--muted); font-size: 12.5px; flex: 1; min-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .opt { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); cursor: pointer; transition: border-color .15s, background .15s; }
+  .opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .opt input { margin: 3px 0 0; accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+  .opt b { display: block; font-size: 14px; font-weight: 600; }
+  .opt span { display: block; font-size: 12.5px; color: var(--muted); }
+  .keyrow { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+  .keyrow input { flex: 1; min-width: 220px; font: inherit; font-size: 13.5px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); direction: ltr; text-align: left; }
+  .keyrow input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .keyrow .ok { color: var(--ok); font-weight: 600; }
+  .keyerr { color: var(--err); font-size: 12.5px; margin-top: 6px; }
+  .xrun { margin-top: 12px; display: flex; align-items: center; gap: 10px; }
+
+  /* ---------- work view ---------- */
+  .scene { position: relative; height: 290px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+  .scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .paper {
+    position: absolute; left: 16px; top: 16px; bottom: 16px; width: 36%;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.08); display: flex; flex-direction: column; overflow: hidden;
+  }
+  .paper .ptop { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--paper-line); font-size: 11.5px; color: var(--muted); }
+  .paper .ptop b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; }
+  .paper .lines {
+    flex: 1; overflow: hidden; padding: 6px 12px; font-size: 13px; line-height: 24px;
+    background-image: repeating-linear-gradient(to bottom, transparent 0 23px, var(--paper-line) 23px 24px);
+    background-position: 0 6px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .paper .lines p { margin: 0; animation: ink .5s ease-out both; }
+  .paper .lines .ts { color: var(--accent); font-size: 11px; margin-left: 6px; font-variant-numeric: tabular-nums; }
+  @keyframes ink { from { opacity: 0; transform: translateX(-10px); filter: blur(2px); } }
+  .skel { height: 9px; border-radius: 5px; margin: 7px 0 8px; background: linear-gradient(90deg, var(--paper-line), var(--line), var(--paper-line)); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+  .steps { display: flex; gap: 8px; margin: 20px 0 14px; padding: 0; list-style: none; }
+  .steps li { flex: 1; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .steps .dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; flex: none; font-size: 11px; font-weight: 700; }
+  .steps li.active { color: var(--ink); font-weight: 600; }
+  .steps li.active .dot { border-color: var(--accent); color: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
+  .steps li.done .dot { background: var(--accent); border-color: var(--accent); color: #fff; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 5px var(--accent-soft); } }
+
+  .bar { height: 8px; background: var(--line); border-radius: 8px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; border-radius: 8px; background: linear-gradient(90deg, var(--wave), var(--accent)); transition: width .6s ease; }
+  .stats { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .stats strong { color: var(--ink); font-weight: 600; }
+  .note { margin-top: 14px; font-size: 12.5px; color: var(--muted); }
+  .ctrl { margin-top: 14px; gap: 8px; }
+  .btn.danger { color: var(--err); border-color: color-mix(in srgb, var(--err) 45%, var(--line)); }
+
+  /* ---------- done / error ---------- */
+  .done-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .check { width: 52px; height: 52px; flex: none; }
+  .check circle { stroke: var(--ok); stroke-dasharray: 160; stroke-dashoffset: 160; animation: draw .6s ease-out forwards; }
+  .check path { stroke: var(--ok); stroke-dasharray: 40; stroke-dashoffset: 40; animation: draw .35s .5s ease-out forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .done-head h2, .err h2 { margin: 0; font-size: 19px; }
+  .done-head p { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .chip { background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 12.5px; color: var(--muted); }
+  .chip b { color: var(--ink); font-weight: 600; }
+  textarea {
+    width: 100%; height: 260px; resize: vertical; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--paper); color: var(--ink); padding: 12px 14px; font: 14px/1.7 "Segoe UI", Arial, sans-serif;
+  }
+  .path { font-size: 12px; color: var(--muted); direction: ltr; text-align: right; word-break: break-all; margin-top: 6px; }
+  .dtitle { margin: -4px 0 14px; font-size: 21px; font-weight: 650; letter-spacing: -.01em; }
+  .tabs { margin-bottom: 10px; }
+  .ins { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 14px 18px; height: 260px; resize: vertical; overflow: auto; font-size: 14px; line-height: 1.7; }
+  .ins h3 { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--accent); }
+  .ins section + section { margin-top: 14px; }
+  .ins p { margin: 0 0 4px; }
+  .ins ul, .ins ol { margin: 0; padding-inline-start: 22px; }
+  .ins li { margin-bottom: 3px; }
+  .ins li small { color: var(--muted); font-size: 12.5px; }
+  .ins .empty { color: var(--muted); }
+  .banner.warn .btn { margin-inline-start: auto; flex: none; }
+  .spin { width: 14px; height: 14px; border: 2px solid currentColor; border-inline-end-color: transparent; border-radius: 50%; display: inline-block; animation: rot .8s linear infinite; }
+  @keyframes rot { to { transform: rotate(360deg); } }
+  .flash { animation: flash 1.6s ease-out; }
+  @keyframes flash { from { box-shadow: 0 0 0 3px var(--accent); } }
+  .err { text-align: center; padding: 20px 0; }
+  .err .eicon { color: var(--err); }
+  .err p { color: var(--muted); white-space: pre-wrap; }
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 16px; border-radius: 8px; font-size: 13.5px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 18px; }
+  footer .credit { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  footer .credit a { color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; }
+  footer .credit a:hover, footer .credit a:focus-visible { color: var(--accent); text-decoration: underline; }
+  footer .sep { opacity: .5; }
+
+  @media (max-width: 640px) {
+    header { flex-wrap: wrap; }
+    header > div:nth-child(2) { flex: 1 1 240px; min-width: 0; }
+    .card { padding: 16px; }
+    .scene { height: auto; }
+    .scene canvas { position: relative; height: 200px; display: block; }
+    .paper { position: relative; inset: auto; width: auto; height: 170px; margin: 0 12px 12px; }
+    .steps li span.lbl { display: none; }
+    .steps li.active span.lbl { display: inline; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 10v4M7 7v10M11 4v16"/><path d="M15 8h6M15 12h6M15 16h4"/></svg>
+    </div>
+    <div>
+      <h1>מתמלל עברית</h1>
+      <p><i class="ico local hd" role="img" aria-label="מקומי" title="רץ מקומית על המחשב"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></i>תמלול והפרדת דוברים על המחשב שלך · <i class="ico cloud hd" role="img" aria-label="אינטרנט" title="דורש אינטרנט (Claude)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.2 4.5 4.5 0 0 0 7 19z"/></svg></i>כותרת, סיכום ומשימות דרך Claude, רק אם בוחרים</p>
+    </div>
+    <button class="btn" id="open-all" title="כל תמלול נשמר בתת-תיקייה משלו לפי תאריך ושעה">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      תיקיית התמלולים
+    </button>
+  </header>
+
+  <main class="card">
+    <div class="banner" id="offline" role="alert" hidden>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 8.8a15 15 0 0 1 4.2-2.6M10.7 5.1A15 15 0 0 1 22 8.8M5 12.5a10 10 0 0 1 5.2-2.7M16.8 10.8A10 10 0 0 1 19 12.5M8.5 16a5 5 0 0 1 7 0M12 20h.01M3 3l18 18"/></svg>
+      <div>
+        <b>אין חיבור לאינטרנט</b>
+        <span>בתמלול הראשון צריך להוריד את מודל התמלול (כ-1.6GB) פעם אחת. התחברו לאינטרנט לפני שמתחילים. אחרי ההורדה אפשר לתמלל גם בלי חיבור.</span>
+      </div>
+    </div>
+    <!-- 1. pick a file -->
+    <section id="view-pick">
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="בחירת קובץ שמע">
+        <div class="icon" aria-hidden="true">
+          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+        </div>
+        <h2>גררו לכאן קובץ שמע</h2>
+        <p>או לחצו כדי לבחור קובץ מהמחשב</p>
+        <div class="formats">m4a · mp3 · wav · ogg · opus · flac · aac · mp4</div>
+      </div>
+      <input type="file" id="picker" hidden accept="audio/*,video/*,.m4a,.mp3,.wav,.ogg,.oga,.opus,.flac,.aac,.wma,.amr,.3gp,.mp4,.mov,.webm,.mkv">
+    </section>
+
+    <!-- 2. ready -->
+    <section id="view-ready" hidden>
+      <div class="file">
+        <div class="ficon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </div>
+        <div class="meta">
+          <div class="name" id="fname"></div>
+          <div class="sub" id="fsub"></div>
+          <div class="upbar" id="upbar"><i></i></div>
+        </div>
+        <button class="link" id="change">החלפת קובץ</button>
+      </div>
+      <div class="row">
+        <div class="seg" id="beamseg" role="group" aria-label="מצב תמלול">
+          <button data-beam="5" aria-pressed="true">מדויק</button>
+          <button data-beam="1" aria-pressed="false">מהיר</button>
+        </div>
+        <span class="hint" id="modehint">דיוק מרבי (מומלץ)</span>
+        <span class="spacer"></span>
+        <button class="btn primary" id="go" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16"/><path d="M16 9h4M16 15h3"/></svg>
+          תמלל
+        </button>
+      </div>
+      <div id="xslot-ready">
+      <details class="extras" id="extras">
+        <summary>
+          <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          אפשרויות נוספות
+          <span class="count" id="xcount"></span>
+        </summary>
+        <div class="xbody">
+          <div class="opts">
+            <label class="opt pre-only"><input type="checkbox" data-x="speakers"><div><b>הפרדת דוברים<i class="ico local" role="img" aria-label="מקומי" title="רץ מקומית על המחשב"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></i></b><span>מי אמר מה בהקלטה</span>
+              <select id="spkcount" aria-label="מספר הדוברים בהקלטה">
+                <option value="2">2 דוברים</option>
+                <option value="3">3 דוברים</option>
+                <option value="4">4 דוברים</option>
+                <option value="5">5 דוברים</option>
+                <option value="0">לא ידוע</option>
+              </select></div></label>
+            <label class="opt"><input type="checkbox" data-x="title"><div><b>כותרת<i class="ico cloud" role="img" aria-label="אינטרנט" title="דורש אינטרנט (Claude)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.2 4.5 4.5 0 0 0 7 19z"/></svg></i></b><span>שם קצר שמתאר את השיחה, ויתווסף גם לשם התיקייה</span></div></label>
+            <label class="opt"><input type="checkbox" data-x="summary"><div><b>סיכום<i class="ico cloud" role="img" aria-label="אינטרנט" title="דורש אינטרנט (Claude)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.2 4.5 4.5 0 0 0 7 19z"/></svg></i></b><span>על מה דיברו, הנקודות העיקריות וההחלטות</span></div></label>
+            <label class="opt"><input type="checkbox" data-x="tasks"><div><b>משימות להמשך<i class="ico cloud" role="img" aria-label="אינטרנט" title="דורש אינטרנט (Claude)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.2 4.5 4.5 0 0 0 7 19z"/></svg></i></b><span>מה צריך לעשות, מי אחראי ועד מתי</span></div></label>
+          </div>
+          <div class="legend">
+            <div class="pre-only"><em class="badge local"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>מקומי</em>רץ על המחשב, ושום דבר לא יוצא ממנו. בפעם הראשונה יורד מודל קטן (כ-33MB). כשמספר הדוברים ידוע, התוצאה מדויקת יותר.</div>
+            <div><em class="badge cloud"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.2 4.5 4.5 0 0 0 7 19z"/></svg>אינטרנט</em>טקסט התמלול נשלח ל-Claude של Anthropic בסוף התמלול. ההקלטה עצמה לא יוצאת מהמחשב. <span class="pre-only">עם הפרדת דוברים, Claude גם בודק לפי התוכן מי אמר שורות שהקול לא בטוח בהן.</span></div>
+          </div>
+          <div class="keyrow" id="keyset" hidden>
+            <span class="ok">✓</span><span>מפתח API של Claude מוגדר <bdi id="keyhint" dir="ltr"></bdi></span>
+            <button class="link" id="keychange">החלפה</button>
+            <button class="link" id="keyremove">הסרה</button>
+          </div>
+          <div id="keyform" hidden>
+            <div class="keyrow">
+              <input type="password" id="keyin" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" aria-label="מפתח API של Claude">
+              <button class="btn sm" id="keysave">שמירת המפתח</button>
+              <button class="link" id="keyhelp">איך משיגים מפתח?</button>
+            </div>
+            <div class="keyerr" id="keyerr" hidden></div>
+          </div>
+          <div class="xrun" id="xrunrow" hidden>
+            <button class="btn sm" id="xrun">יצירה</button>
+            <span class="hint" id="xrunhint"></span>
+          </div>
+        </div>
+      </details>
+      </div>
+    </section>
+
+    <!-- 3. working -->
+    <section id="view-work" hidden>
+      <div class="scene" id="scene">
+        <canvas id="cv"></canvas>
+        <div class="paper" id="paper">
+          <div class="ptop">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>
+            <b id="pname"></b>
+          </div>
+          <div class="lines" id="lines"></div>
+        </div>
+      </div>
+      <ol class="steps" id="steps">
+        <li data-s="decode"><span class="dot">1</span><span class="lbl">פענוח השמע</span></li>
+        <li data-s="model"><span class="dot">2</span><span class="lbl">טעינת המודל</span></li>
+        <li data-s="transcribe"><span class="dot">3</span><span class="lbl">תמלול</span></li>
+        <li data-s="speakers" hidden><span class="dot">4</span><span class="lbl">זיהוי דוברים</span></li>
+        <li data-s="insights" hidden><span class="dot">5</span><span class="lbl">סיכום</span></li>
+      </ol>
+      <div class="bar"><i id="bar"></i></div>
+      <div class="stats">
+        <span id="stxt">מתחיל…</span>
+        <span><strong id="pct">0%</strong> · <span id="clock">00:00</span></span>
+      </div>
+      <div class="note" id="note"></div>
+      <div class="row ctrl" id="ctrl" hidden>
+        <button class="btn sm" id="pausebtn">השהיה</button>
+        <button class="btn sm" id="cancelbtn">ביטול</button>
+      </div>
+    </section>
+
+    <!-- 4. done -->
+    <section id="view-done" hidden>
+      <div class="done-head">
+        <svg class="check" viewBox="0 0 52 52" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="26" cy="26" r="24"/><path d="M15 27l7 7 15-16"/></svg>
+        <div>
+          <h2>התמלול הושלם</h2>
+          <p id="dsub"></p>
+        </div>
+      </div>
+      <div class="dtitle" id="dtitle" hidden></div>
+      <div class="chips" id="chips"></div>
+      <div class="names" id="names" hidden>
+        <div class="names-head"><b>שמות הדוברים</b><span class="hint">אפשר לתת לכל דובר שם, והוא יופיע בתמלול ובקבצים</span></div>
+        <div id="namerows"></div>
+        <div class="xrun"><button class="btn sm" id="namesave">שמירת השמות</button></div>
+      </div>
+      <div class="banner warn" id="serr" role="alert" hidden>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16.5v.5"/></svg>
+        <div><b>התמלול נשמר בלי הפרדת דוברים</b><span id="serrmsg"></span></div>
+      </div>
+      <div class="banner warn" id="xerr" role="alert" hidden>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16.5v.5"/></svg>
+        <div><b>התמלול נשמר, אבל הסיכום לא נוצר</b><span id="xerrmsg"></span></div>
+        <button class="btn sm" id="xretry">ניסיון נוסף</button>
+      </div>
+      <div class="seg tabs" id="tabs" role="group" aria-label="תצוגה" hidden>
+        <button data-tab="text" aria-pressed="true">תמלול</button>
+        <button data-tab="ins" aria-pressed="false">סיכום ומשימות</button>
+      </div>
+      <textarea id="text" readonly dir="rtl" aria-label="טקסט התמלול"></textarea>
+      <div class="ins" id="ins" tabindex="0" aria-label="סיכום ומשימות" hidden></div>
+      <div class="path" id="dpath"></div>
+      <div class="row">
+        <button class="btn primary" id="open-txt">פתיחת קובץ הטקסט</button>
+        <button class="btn" id="open-sum" hidden>פתיחת קובץ הסיכום</button>
+        <button class="btn" id="open-dir">הצגה בתיקייה</button>
+        <button class="btn" id="copy">העתקה</button>
+        <span class="spacer"></span>
+        <button class="btn" id="again">קובץ חדש</button>
+      </div>
+      <div id="xslot-done"></div>
+    </section>
+
+    <!-- 5. error -->
+    <section id="view-error" hidden>
+      <div class="err">
+        <div class="eicon" aria-hidden="true">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16.5v.5"/></svg>
+        </div>
+        <h2>משהו השתבש</h2>
+        <p id="emsg"></p>
+        <button class="btn" id="retry">חזרה</button>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="credit" id="credit" hidden>
+      <span>גרסה <bdi id="ver"></bdi></span>
+      <span class="sep">·</span>
+      <span>פותח על ידי <bdi id="author"></bdi></span>
+      <span class="sep">·</span>
+      <span>© כל הזכויות שמורות</span>
+      <span class="sep">·</span>
+      <a href="#" id="author-link" title="">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const VIEWS = ['pick', 'ready', 'work', 'done', 'error'];
+const EXTS = ['m4a','mp3','wav','ogg','oga','opus','flac','aac','wma','amr','3gp','mp4','m4v','mov','webm','mkv'];
+const STAGES = ['decode', 'model', 'transcribe', 'speakers', 'insights'];
+const XKINDS = ['title', 'summary', 'tasks'];
+const MODEL_MB = 1550;
+
+let view = 'pick';
+let uploaded = null;      // {name, size}
+let beam = 5;
+let linesSeen = 0;
+let pollTimer = null;
+let transcribeStart = null;
+let paused = false;       // the running job is paused (from /status)
+let hasKey = false;
+let result = null;        // last /result payload shown in the done view
+let doneFile = '';
+
+function show(v) {
+  view = v;
+  VIEWS.forEach((n) => { $('#view-' + n).hidden = n !== v; });
+  // one "more options" panel, shown under "transcribe" and under a finished transcript
+  if (v === 'ready' || v === 'done') {
+    $('#xslot-' + v).append($('#extras'));
+    $('#xrunrow').hidden = v !== 'done';
+    updateExtras();
+  }
+  if (v === 'work') Scene.start(); else Scene.stop();
+}
+
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+const fmtSize = (b) => b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+function fmtTime(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  const mm = String(m).padStart(2, '0'), ss = String(s).padStart(2, '0');
+  return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+function fmtTs(sec) {
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = Math.floor(sec % 60);
+  return [h, m, s].map((x) => String(x).padStart(2, '0')).join(':');
+}
+
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+  return data;
+}
+
+/* ------------------------------------------------------------ pick + upload */
+
+const picker = $('#picker');
+$('#drop').addEventListener('click', () => picker.click());
+$('#drop').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); picker.click(); } });
+picker.addEventListener('change', () => { if (picker.files[0]) handleFile(picker.files[0]); picker.value = ''; });
+$('#change').addEventListener('click', () => picker.click());
+
+let dragDepth = 0;
+window.addEventListener('dragenter', (e) => { e.preventDefault(); if (++dragDepth === 1 && canPick()) document.body.classList.add('dragging'); });
+window.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove('dragging'); } });
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dragDepth = 0;
+  document.body.classList.remove('dragging');
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f && canPick()) handleFile(f);
+});
+const canPick = () => view === 'pick' || view === 'ready' || view === 'done' || view === 'error';
+
+function handleFile(file) {
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (!EXTS.includes(ext)) { toast('סוג הקובץ לא נתמך: .' + ext); return; }
+  uploaded = null;
+  show('ready');
+  $('#fname').textContent = file.name;
+  $('#fsub').textContent = fmtSize(file.size) + ' · טוען…';
+  $('#upbar').hidden = false;
+  $('#upbar i').style.width = '0';
+  $('#go').disabled = true;
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/upload?name=' + encodeURIComponent(file.name));
+  xhr.upload.onprogress = (e) => { if (e.lengthComputable) $('#upbar i').style.width = (100 * e.loaded / e.total) + '%'; };
+  xhr.onload = () => {
+    let data = {};
+    try { data = JSON.parse(xhr.responseText); } catch (_) {}
+    if (xhr.status !== 200) { fail(data.error || 'ההעלאה נכשלה'); return; }
+    uploaded = data;
+    $('#fname').textContent = data.name;
+    $('#fsub').textContent = fmtSize(data.size) + ' · מוכן לתמלול';
+    $('#upbar').hidden = true;
+    $('#go').disabled = false;
+    $('#go').focus();
+  };
+  xhr.onerror = () => fail('ההעלאה נכשלה. האם חלון המתמלל עדיין פתוח?');
+  xhr.send(file);
+}
+
+document.querySelectorAll('#beamseg button').forEach((b) => b.addEventListener('click', () => setBeam(+b.dataset.beam)));
+function setBeam(v) {
+  beam = v === 1 ? 1 : 5;
+  document.querySelectorAll('#beamseg button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.beam === beam)));
+  $('#modehint').textContent = beam === 5 ? 'דיוק מרבי (מומלץ)' : 'מהיר יותר, מעט פחות מדויק';
+  try { localStorage.setItem('beam', beam); } catch (_) {}
+}
+try { setBeam(+localStorage.getItem('beam') || 5); } catch (_) { setBeam(5); }
+
+/* ------------------------------------------------------------ extra options */
+
+const xboxes = () => [...document.querySelectorAll('#extras input[data-x]')];
+const chosenExtras = () => xboxes().filter((b) => b.checked && XKINDS.includes(b.dataset.x)).map((b) => b.dataset.x);
+// speaker separation: null = off, 0 = automatic count, 2-5 = that many speakers
+const chosenSpeakers = () => ($('#extras input[data-x="speakers"]').checked ? +$('#spkcount').value : null);
+const XNAMES = { title: 'כותרת', summary: 'סיכום', tasks: 'משימות', speakers: 'דוברים' };
+const THE = { title: 'הכותרת', summary: 'הסיכום', tasks: 'המשימות' };
+// "א", "א וב", "א, ב וג"
+const joinHe = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' ו' + a[a.length - 1]);
+
+function updateExtras() {
+  const x = chosenExtras();
+  const all = xboxes().filter((b) => b.checked).map((b) => b.dataset.x);
+  const listed = view === 'done' ? x : all;   // speaker separation can only be chosen before transcribing
+  $('#xcount').textContent = listed.length ? '· ' + listed.map((k) => XNAMES[k]).join(', ') : '';
+  // the button says exactly what it will make, and whether it replaces what is already there
+  const have = (result && result.insights) || {};
+  const again = x.length > 0 && x.every((k) => have[k] != null);
+  $('#xrun').disabled = !x.length || !hasKey;
+  $('#xrun').textContent = !x.length ? 'יצירה' : (again ? 'יצירה מחדש של ' : 'יצירת ') + joinHe(x.map((k) => THE[k]));
+  $('#xrunhint').textContent = !x.length ? 'סמנו מה ליצור'
+    : !hasKey ? 'צריך קודם מפתח API'
+    : again ? 'Claude יכין את זה שוב מהתמלול הזה ויחליף את מה שנוצר קודם'
+    : 'Claude יכין את זה מהתמלול הזה (דרך האינטרנט)';
+  try { localStorage.setItem('extras', JSON.stringify(all)); localStorage.setItem('spkcount', $('#spkcount').value); } catch (_) {}
+}
+xboxes().forEach((b) => b.addEventListener('change', () => {
+  updateExtras();
+  if (b.checked && !hasKey && XKINDS.includes(b.dataset.x)) { $('#keyform').hidden = false; }
+}));
+$('#spkcount').addEventListener('change', () => {
+  $('#extras input[data-x="speakers"]').checked = true;   // picking a count means "yes, separate"
+  updateExtras();
+});
+try {
+  const saved = JSON.parse(localStorage.getItem('extras') || '[]');
+  const cnt = localStorage.getItem('spkcount');
+  if (cnt !== null && [...$('#spkcount').options].some((o) => o.value === cnt)) $('#spkcount').value = cnt;
+  xboxes().forEach((b) => { b.checked = saved.includes(b.dataset.x); });
+  if (saved.length) $('#extras').open = true;
+} catch (_) {}
+
+function setKeyState(k) {
+  hasKey = !!k.has_key;
+  $('#keyset').hidden = !hasKey;
+  $('#keyform').hidden = hasKey;
+  $('#keyhint').textContent = k.key_hint || '';
+  $('#keyerr').hidden = true;
+  $('#keyin').value = '';
+  updateExtras();
+}
+async function saveKey(value) {
+  $('#keysave').disabled = true;
+  $('#keyerr').hidden = true;
+  try {
+    setKeyState(await api('/settings', { api_key: value }));
+    toast(value ? 'המפתח נבדק ונשמר' : 'המפתח הוסר');
+  } catch (e) {
+    $('#keyerr').textContent = e.message;
+    $('#keyerr').hidden = false;
+  } finally {
+    $('#keysave').disabled = false;
+  }
+}
+$('#keysave').addEventListener('click', () => { if ($('#keyin').value.trim()) saveKey($('#keyin').value.trim()); else $('#keyin').focus(); });
+$('#keyin').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#keysave').click(); } });
+$('#keychange').addEventListener('click', () => { $('#keyform').hidden = false; $('#keyin').focus(); });
+$('#keyremove').addEventListener('click', () => saveKey(''));
+$('#keyhelp').addEventListener('click', () => api('/open', { what: 'keys' }).catch(() => {}));
+
+function needKey() {
+  $('#extras').open = true;
+  $('#keyform').hidden = false;
+  $('#keyin').focus();
+  toast('הוסיפו מפתח API של Claude, או בטלו את הסימון של האפשרויות הנוספות');
+}
+
+/* ------------------------------------------------------------ transcribe */
+
+$('#go').addEventListener('click', async () => {
+  if (!uploaded) return;
+  const extras = chosenExtras();
+  if (extras.length && !hasKey) { needKey(); return; }
+  $('#go').disabled = true;
+  try {
+    await api('/transcribe', { name: uploaded.name, beam, extras, speakers: chosenSpeakers() });
+    enterWork(uploaded.name);
+  } catch (e) {
+    fail(e.message);
+  }
+});
+
+function enterWork(name) {
+  resetCtrl();
+  linesSeen = 0;
+  transcribeStart = null;
+  document.title = 'מתמלל… · מתמלל עברית';
+  $('#lines').innerHTML = '<div class="skel" style="width:85%"></div><div class="skel" style="width:60%"></div><div class="skel" style="width:75%"></div>';
+  $('#pname').textContent = name || '';
+  $('#bar').style.width = '0';
+  show('work');
+  poll();
+}
+
+async function poll() {
+  clearTimeout(pollTimer);
+  let s;
+  try {
+    s = await api('/status?since=' + linesSeen);
+  } catch (e) {
+    pollTimer = setTimeout(poll, 1500);
+    return;
+  }
+  render(s);
+  if (!s.running && s.cancelled) { cancelled(s); return; }
+  if (s.error) { fail(s.error); return; }
+  if (!s.running && s.result) { finish(s); return; }
+  if (!s.running) { show('pick'); return; }
+  pollTimer = setTimeout(poll, 600);
+}
+
+function render(s) {
+  if (s.lines_total < linesSeen) { linesSeen = 0; $('#lines').innerHTML = ''; }   // GPU -> CPU retry
+  if (s.lines.length) {
+    const box = $('#lines');
+    if (linesSeen === 0) box.innerHTML = '';
+    for (const l of s.lines) {
+      const p = document.createElement('p');
+      p.innerHTML = `<span class="ts"></span>`;
+      p.firstChild.textContent = fmtTs(l.start);
+      p.append(l.text);
+      box.append(p);
+      Scene.feed(l.text);
+    }
+    while (box.children.length > 30) box.firstChild.remove();
+    linesSeen = s.lines_total;
+  }
+
+  const withX = !!(s.extras && s.extras.length);
+  const withS = s.speakers !== null && s.speakers !== undefined;
+  $('#steps li[data-s="insights"]').hidden = !withX;
+  $('#steps li[data-s="speakers"]').hidden = !withS;
+  const idx = STAGES.indexOf(s.stage);
+  let shown = 0;
+  document.querySelectorAll('#steps li').forEach((li, i) => {
+    li.classList.toggle('done', i < idx);
+    li.classList.toggle('active', i === idx);
+    if (!li.hidden) shown++;
+    li.querySelector('.dot').textContent = i < idx ? '✓' : shown;
+  });
+  const tEnd = 1 - (withS ? 0.08 : 0) - (withX ? 0.06 : 0);   // where the transcription part of the bar ends
+
+  let overall = 0, text = '', note = '';
+  const dlFrac = s.download_mb ? Math.min(s.download_mb / MODEL_MB, 1) : 0;
+  if (s.stage === 'decode') {
+    overall = 0.08 * s.progress;
+    text = 'מפענח את קובץ השמע…';
+  } else if (s.stage === 'model') {
+    overall = 0.08 + 0.12 * dlFrac;
+    text = s.duration ? `טוען את מודל התמלול · אורך ההקלטה ${fmtTime(s.duration)}` : 'טוען את מודל התמלול…';
+    if (s.download_mb != null && s.download_mb < MODEL_MB * 0.98) {
+      note = `הפעלה ראשונה: מוריד את המודל (${s.download_mb} / ~${MODEL_MB} MB). בפעמים הבאות זה ייטען מיד.`;
+    }
+  } else if (s.stage === 'transcribe') {
+    overall = 0.2 + (tEnd - 0.2) * s.progress;
+    if (!transcribeStart) transcribeStart = { t: s.elapsed, p: s.progress };
+    text = s.duration ? `מתמלל · ${fmtTime(s.progress * s.duration)} מתוך ${fmtTime(s.duration)}` : 'מתמלל…';
+    const dp = s.progress - transcribeStart.p, dt = s.elapsed - transcribeStart.t;
+    if (dp > 0.02 && dt > 5) text += ` · נותרו בערך ${fmtTime(dt / dp * (1 - s.progress))}`;
+    note = s.device === 'cuda' ? 'רץ על כרטיס המסך (GPU).' : 'רץ על המעבד (CPU). בהקלטות ארוכות זה לוקח זמן, ואפשר לצמצם את החלון ולחזור מאוחר יותר.';
+  } else if (s.stage === 'speakers') {
+    overall = tEnd + 0.08 * s.progress;
+    text = 'מזהה מי מדבר…';
+    note = 'התמלול כבר נשמר. הפרדת הדוברים רצה על המחשב, ובפעם הראשונה יורד מודל קטן (כ-33MB).';
+  } else if (s.stage === 'insights') {
+    overall = 0.95;
+    text = 'Claude מכין ' + s.extras.map((k) => XNAMES[k]).join(', ') + '…';
+    note = 'התמלול כבר נשמר. טקסט התמלול נשלח ל-Claude, ובדרך כלל זה לוקח פחות מדקה.';
+  }
+  // pause / cancel: while decoding and transcribing (later steps are short and the transcript is saved)
+  const canStop = s.running && ['decode', 'model', 'transcribe'].includes(s.stage);
+  $('#ctrl').hidden = !canStop;
+  paused = !!s.paused;
+  $('#pausebtn').textContent = paused ? 'המשך' : 'השהיה';
+  if (paused && canStop) {
+    text = 'מושהה · ' + text;
+    note = 'ההשהיה נכנסת לתוקף בסוף המשפט הנוכחי. לחצו "המשך" כדי להמשיך מאותה נקודה. אם החלון ייסגר בזמן ההשהיה, העבודה תבוטל אחרי 10 דקות.';
+  }
+  $('#bar').style.width = (overall * 100).toFixed(1) + '%';
+  $('#pct').textContent = Math.floor(overall * 100) + '%';
+  $('#stxt').textContent = text;
+  $('#clock').textContent = fmtTime(s.elapsed);
+  $('#note').textContent = note;
+  Scene.set(paused ? 'paused' : s.stage, s.progress, dlFrac);
+}
+
+async function finish(s) {
+  show('done');
+  // sessionStorage survives a reload (F5) but not closing the window
+  try { sessionStorage.setItem('shownJob', s.job); } catch (_) {}
+  let data;
+  try { data = await api('/result'); } catch (e) { fail(e.message); return; }
+  result = data;
+  const words = data.text.replace(/\] דובר \d+:/g, ']').split(/\s+/).filter((w) => w && !/^\[\d/.test(w)).length;
+  const lines = data.text.split('\n').filter(Boolean).length;
+  $('#text').value = data.text;
+  doneFile = s.file || '';
+  $('#dpath').textContent = data.txt;
+  renderInsights(data);
+  renderNames(data);
+  updateExtras();
+  // keep the done view short once there is a summary; the options stay one click away
+  if (data.insights) $('#extras').open = false;
+  $('#chips').innerHTML = '';
+  const chips = [['אורך ההקלטה', s.duration ? fmtTime(s.duration) : 'לא ידוע'], ['זמן תמלול', fmtTime(data.elapsed)], ['שורות', lines], ['מילים', words.toLocaleString('he-IL')]];
+  const pct = (x) => Math.round(x * 100) + '%';
+  if (data.confidence != null) chips.push(['ביטחון בתמלול', pct(data.confidence), 'ממוצע הביטחון של מודל התמלול בכל משפט. זו הערכה של המודל עצמו, לא בדיקה מול טקסט נכון.']);
+  if (data.speakers) chips.push(['דוברים', data.speakers]);
+  if (data.speakers_by_content) chips.push(['תוקנו לפי התוכן', data.speakers_by_content + ' שורות', 'Claude קבע לפי ההקשר (פניות בשם, שאלה ותשובה) מי אמר שורות שהקול לא היה בטוח בהן, או את כל השורות כשהקול לא הצליח להפריד.']);
+  if (data.speakers_confidence != null) chips.push(['ודאות בזיהוי הדוברים', pct(data.speakers_confidence), 'חלק המשפטים שבהם הקול דומה בבירור לדובר שסומן. במשפטים האלה הזיהוי כמעט תמיד נכון; תגובות קצרות מאוד ("כן", "אהה") לא נבדקות, ובהן יש יותר טעויות.']);
+  $('#serr').hidden = !data.speakers_error;
+  $('#serrmsg').textContent = data.speakers_error || '';
+  for (const [k, v, tip] of chips) {
+    const c = document.createElement('span');
+    c.className = 'chip';
+    if (tip) { c.title = tip; c.classList.add('tip'); }
+    c.textContent = k + ': ';
+    const b = document.createElement('b');
+    b.textContent = v;
+    c.append(b);
+    $('#chips').append(c);
+  }
+  document.title = '✓ התמלול הושלם · מתמלל עברית';
+}
+
+function renderInsights(data) {
+  const x = data.insights || null;
+  // "<file> · folder <name>" - the folder name mixes digits and Hebrew, so isolate it as LTR
+  const folder = document.createElement('bdi');
+  folder.dir = 'ltr';
+  folder.textContent = data.txt.split(/[\\/]/).slice(-2)[0];
+  $('#dsub').replaceChildren(doneFile + ' · תיקייה ', folder);
+  $('#dtitle').hidden = !(x && x.title);
+  $('#dtitle').textContent = (x && x.title) || '';
+  const hasBody = !!(x && (x.summary || x.tasks));
+  $('#tabs').hidden = !hasBody;
+  $('#open-sum').hidden = !data.summary;
+  $('#xerr').hidden = !data.insights_error;
+  $('#xerrmsg').textContent = data.insights_error || '';
+  const box = $('#ins');
+  box.innerHTML = '';
+  if (x && x.summary) {
+    const sec = document.createElement('section');
+    sec.innerHTML = '<h3>סיכום</h3>';
+    let ul = null;
+    for (const raw of x.summary.split('\n')) {
+      const line = raw.trim();
+      if (!line) { ul = null; continue; }
+      if (/^[-•*]\s+/.test(line)) {
+        if (!ul) { ul = document.createElement('ul'); sec.append(ul); }
+        const li = document.createElement('li');
+        li.textContent = line.replace(/^[-•*]\s+/, '');
+        ul.append(li);
+      } else {
+        ul = null;
+        const p = document.createElement('p');
+        p.textContent = line;
+        sec.append(p);
+      }
+    }
+    box.append(sec);
+  }
+  if (x && x.tasks) {
+    const sec = document.createElement('section');
+    sec.innerHTML = '<h3>משימות להמשך</h3>';
+    if (!x.tasks.length) {
+      const p = document.createElement('p');
+      p.className = 'empty';
+      p.textContent = 'לא עלו משימות בשיחה.';
+      sec.append(p);
+    } else {
+      const ol = document.createElement('ol');
+      for (const t of x.tasks) {
+        const li = document.createElement('li');
+        li.textContent = t.task;
+        const extra = [t.owner && 'אחראי: ' + t.owner, t.due && 'עד: ' + t.due].filter(Boolean);
+        if (extra.length) {
+          const sm = document.createElement('small');
+          sm.textContent = ' (' + extra.join(' · ') + ')';
+          li.append(sm);
+        }
+        ol.append(li);
+      }
+      sec.append(ol);
+    }
+    box.append(sec);
+  }
+  setTab(hasBody ? 'ins' : 'text');
+}
+
+function renderNames(data) {
+  const names = data.speaker_names || {};
+  $('#names').hidden = !Object.keys(names).length;
+  const box = $('#namerows');
+  box.innerHTML = '';
+  for (const [k, name] of Object.entries(names)) {
+    const row = document.createElement('div');
+    row.className = 'namerow';
+    const inp = document.createElement('input');
+    inp.dataset.k = k;
+    inp.value = name;
+    inp.placeholder = 'דובר ' + k;
+    inp.maxLength = 40;
+    inp.setAttribute('aria-label', 'שם לדובר ' + k);
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#namesave').click(); });
+    const said = document.createElement('span');
+    said.className = 'said';
+    const sample = (data.speaker_samples || {})[k];
+    said.textContent = sample ? 'אמר/ה: "' + sample + '…"' : '';
+    row.append(inp, said);
+    box.append(row);
+  }
+}
+$('#namesave').addEventListener('click', async () => {
+  const names = {};
+  document.querySelectorAll('#namerows input').forEach((i) => { names[i.dataset.k] = i.value.trim(); });
+  try {
+    await api('/speakers', { names });
+    result = await api('/result');
+    $('#text').value = result.text;
+    renderInsights(result);
+    renderNames(result);
+    toast('השמות עודכנו בתמלול ובקבצים');
+  } catch (e) {
+    toast(e.message);
+  }
+});
+
+function setTab(t) {
+  if ($('#tabs').hidden) t = 'text';
+  document.querySelectorAll('#tabs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === t)));
+  $('#text').hidden = t !== 'text';
+  $('#ins').hidden = t !== 'ins';
+}
+document.querySelectorAll('#tabs button').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+const activeTab = () => ($('#ins').hidden ? 'text' : 'ins');
+
+async function runInsights(kinds, btn) {
+  if (!kinds.length) return;
+  if (!hasKey) { needKey(); return; }
+  const label = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin" aria-hidden="true"></span> Claude עובד… (בדרך כלל פחות מדקה)';
+  let ok = false;
+  try {
+    await api('/insights', { kinds });
+    ok = true;
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = label;
+  }
+  try { result = await api('/result'); $('#text').value = result.text; renderInsights(result); renderNames(result); } catch (_) {}
+  updateExtras();
+  if (ok) {
+    // show what changed: the summary tab (or the title, if only that was made)
+    const target = kinds.some((k) => k !== 'title') && !$('#tabs').hidden ? $('#tabs') : $('#dtitle');
+    if (target.id === 'tabs') setTab('ins');
+    const box = target.id === 'tabs' ? $('#ins') : $('#dtitle');
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    box.classList.remove('flash');
+    void box.offsetWidth;
+    box.classList.add('flash');
+    toast('מוכן: ' + joinHe(kinds.map((k) => THE[k])) + (target.id === 'tabs' ? ' בלשונית "סיכום ומשימות"' : ' בראש המסך'));
+  }
+}
+$('#xrun').addEventListener('click', () => runInsights(chosenExtras(), $('#xrun')));
+$('#xretry').addEventListener('click', () => runInsights((result && result.insights_kinds) || chosenExtras(), $('#xretry')));
+
+$('#pausebtn').addEventListener('click', async () => {
+  $('#pausebtn').disabled = true;
+  try { await api('/pause', { paused: !paused }); } catch (e) { toast(e.message); }
+  $('#pausebtn').disabled = false;
+  poll();
+});
+// cancel needs a second click within a few seconds - no browser dialogs
+$('#cancelbtn').addEventListener('click', async () => {
+  const b = $('#cancelbtn');
+  if (!b.classList.contains('danger')) {
+    b.classList.add('danger');
+    b.textContent = 'לבטל באמת?';
+    clearTimeout(b.timer);
+    b.timer = setTimeout(() => { b.classList.remove('danger'); b.textContent = 'ביטול'; }, 4000);
+    return;
+  }
+  clearTimeout(b.timer);
+  b.disabled = $('#pausebtn').disabled = true;
+  b.textContent = 'מבטל…';
+  try { await api('/cancel', {}); } catch (e) { toast(e.message); }
+  poll();
+});
+function resetCtrl() {
+  const b = $('#cancelbtn');
+  clearTimeout(b.timer);
+  b.classList.remove('danger');
+  b.textContent = 'ביטול';
+  b.disabled = $('#pausebtn').disabled = false;
+}
+
+function cancelled(s) {
+  resetCtrl();
+  document.title = 'מתמלל עברית';
+  // the audio went back to the waiting area, so "transcribe" can run again right away
+  uploaded = { name: s.file };
+  show('ready');
+  $('#fname').textContent = s.file || '';
+  $('#fsub').textContent = 'התמלול בוטל · הקובץ מוכן לתמלול';
+  $('#upbar').hidden = true;
+  $('#go').disabled = false;
+  toast('התמלול בוטל');
+}
+
+function fail(msg) {
+  $('#emsg').textContent = msg;
+  show('error');
+}
+
+$('#open-txt').addEventListener('click', () => api('/open', { what: 'txt' }).catch((e) => toast(e.message)));
+$('#author-link').addEventListener('click', (e) => { e.preventDefault(); api('/open', { what: 'repo' }).catch(() => {}); });
+$('#open-all').addEventListener('click', () => api('/open', { what: 'transcripts' }).catch((e) => toast(e.message)));
+$('#open-dir').addEventListener('click', () => api('/open', { what: 'folder' }).catch((e) => toast(e.message)));
+$('#open-sum').addEventListener('click', () => api('/open', { what: 'summary' }).catch((e) => toast(e.message)));
+$('#copy').addEventListener('click', async () => {
+  const text = activeTab() === 'ins' ? (($('#dtitle').hidden ? '' : $('#dtitle').textContent + '\n\n') + $('#ins').innerText) : $('#text').value;
+  try { await navigator.clipboard.writeText(text); toast('הטקסט הועתק'); }
+  catch (_) { $('#text').select(); document.execCommand('copy'); toast('הטקסט הועתק'); }
+});
+$('#again').addEventListener('click', () => {
+  document.title = 'מתמלל עברית';
+  uploaded = null;
+  try { sessionStorage.removeItem('shownJob'); } catch (_) {}
+  show('pick');
+});
+$('#retry').addEventListener('click', () => show(uploaded ? 'ready' : 'pick'));
+
+/* ------------------------------------------------------------ animated scene
+   Audio (waveform, right) -> particles -> the "machine" (center) -> Hebrew
+   letters fly out to the sheet of paper (left). Letters come from the real
+   transcribed text as it arrives. */
+
+const Scene = (() => {
+  const cv = $('#cv'), ctx = cv.getContext('2d');
+  const HEB = 'אבגדהוזחטיכלמנסעפצקרשת';
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W = 0, H = 0, raf = null, colors = {};
+  let tick = 0, stage = 'decode', progress = 0, dl = 0, pulse = 0, glyph = 'א', glyphT = 0;
+  const parts = [], letters = [], queue = [];
+
+  function readColors() {
+    const cs = getComputedStyle(document.documentElement);
+    for (const k of ['accent', 'accent-soft', 'wave', 'ink', 'muted', 'line', 'surface']) colors[k] = cs.getPropertyValue('--' + k).trim();
+  }
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+
+  function resize() {
+    const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+    W = r.width; H = r.height;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', () => { if (raf) resize(); });
+
+  function geom() {
+    const pr = $('#paper').getBoundingClientRect(), cr = cv.getBoundingClientRect();
+    const beside = pr.top < cr.bottom - 10 && pr.right < cr.right - 40;
+    const paperX = beside ? pr.right - cr.left : 18;
+    const waveL = W * (beside ? 0.70 : 0.62), waveR = W - 18;
+    const cx = beside ? (paperX + waveL) / 2 : W * 0.36;
+    return { paperX, waveL, waveR, cx, cy: H / 2, R: Math.min(46, H * 0.18), lineY: beside ? null : H - 10 };
+  }
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
+  function frame(t) {
+    raf = requestAnimationFrame(frame);
+    const g = geom();
+    ctx.clearRect(0, 0, W, H);
+    const active = stage === 'transcribe';
+
+    // conveyor lines
+    ctx.save();
+    ctx.setLineDash([3, 7]);
+    ctx.lineDashOffset = reduce ? 0 : t * 0.03;
+    ctx.strokeStyle = colors.line;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(g.waveL - 6, g.cy); ctx.lineTo(g.cx + g.R + 8, g.cy);
+    ctx.moveTo(g.cx - g.R - 8, g.cy); ctx.lineTo(g.paperX + 8, g.lineY ?? g.cy);
+    ctx.stroke();
+    ctx.restore();
+
+    // waveform
+    const n = 26, bw = (g.waveR - g.waveL) / n;
+    for (let i = 0; i < n; i++) {
+      const x = g.waveR - (i + 0.5) * bw;
+      const lit = stage !== 'decode' || i / n <= progress;
+      const k = Math.abs(Math.sin(t * 0.0031 + i * 0.55) * Math.sin(t * 0.0013 + i * 0.27));
+      const amp = (0.18 + 0.82 * k) * H * (lit ? 0.34 : 0.12) * (reduce ? 0.6 : 1);
+      ctx.fillStyle = lit ? colors.wave : colors.line;
+      ctx.globalAlpha = lit ? 0.55 + 0.45 * k : 1;
+      ctx.beginPath();
+      ctx.roundRect(x - bw * 0.28, g.cy - amp / 2, bw * 0.56, amp, bw * 0.28);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // particles: sound flowing into the machine
+    if (!reduce) {
+      const rate = active ? 0.7 : stage === 'decode' ? 0.35 * Math.max(progress, 0.2) : 0.12;
+      if (Math.random() < rate) parts.push({ x: g.waveL - 4, y: g.cy + rnd(-H * 0.18, H * 0.18), v: rnd(1.6, 3.2), r: rnd(1.5, 3.2), ph: rnd(0, 6) });
+    }
+    ctx.fillStyle = colors.wave;
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i];
+      p.x -= p.v;
+      p.y += (g.cy - p.y) * 0.035 + Math.sin(t * 0.01 + p.ph) * 0.4;
+      if (p.x < g.cx + g.R * 0.7) { parts.splice(i, 1); pulse = Math.min(pulse + 0.06, 1); continue; }
+      ctx.globalAlpha = Math.min(1, (g.waveL - p.x) / 30);
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // the machine
+    pulse *= 0.96;
+    const R = g.R;
+    ctx.fillStyle = colors['accent-soft'];
+    ctx.beginPath(); ctx.arc(g.cx, g.cy, R + 10 + pulse * 10, 0, 7); ctx.fill();
+    ctx.save();
+    ctx.translate(g.cx, g.cy);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = colors.accent;
+    ctx.setLineDash([10, 9]);
+    ctx.rotate(reduce ? 0 : t * (active ? 0.0016 : 0.0008));
+    ctx.beginPath(); ctx.arc(0, 0, R + 4, 0, 7); ctx.stroke();
+    ctx.restore();
+    ctx.save();
+    ctx.translate(g.cx, g.cy);
+    ctx.setLineDash([3, 6]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = colors.wave;
+    ctx.rotate(reduce ? 0 : -t * 0.0022);
+    ctx.beginPath(); ctx.arc(0, 0, R - 8, 0, 7); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = colors.surface;
+    ctx.beginPath(); ctx.arc(g.cx, g.cy, R - 13, 0, 7); ctx.fill();
+
+    if (stage === 'model') {
+      // download / load arc
+      ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.strokeStyle = colors.accent;
+      ctx.beginPath();
+      if (dl > 0.01 && dl < 0.98) ctx.arc(g.cx, g.cy, R - 18, -Math.PI / 2, -Math.PI / 2 + dl * Math.PI * 2);
+      else { const a = t * 0.006; ctx.arc(g.cx, g.cy, R - 18, a, a + 1.6); }
+      ctx.stroke(); ctx.lineCap = 'butt';
+    }
+    if (t - glyphT > (active ? 90 : 260)) { glyph = queue.length && active ? queue[0] : HEB[(Math.random() * HEB.length) | 0]; glyphT = t; }
+    ctx.fillStyle = colors.accent;
+    ctx.font = `600 ${Math.round(R * 0.62)}px "Segoe UI", Arial, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.globalAlpha = stage === 'model' ? 0.5 : 1;
+    ctx.fillText(glyph, g.cx, g.cy + 1);
+    ctx.globalAlpha = 1;
+
+    // letters flying to the paper
+    const emitEvery = queue.length > 60 ? 1 : 2;
+    if (!reduce && active && ++tick % emitEvery === 0) {
+      let ch = null;
+      if (queue.length) ch = queue.shift();
+      else if (Math.random() < 0.04) ch = HEB[(Math.random() * HEB.length) | 0];
+      if (ch) letters.push({ ch, t0: t, dur: rnd(900, 1400), dy: rnd(-H * 0.28, H * 0.28), size: rnd(13, 21) });
+    }
+    ctx.fillStyle = colors.ink;
+    for (let i = letters.length - 1; i >= 0; i--) {
+      const L = letters[i], k = (t - L.t0) / L.dur;
+      if (k >= 1) { letters.splice(i, 1); continue; }
+      const e = 1 - Math.pow(1 - k, 2);
+      const x0 = g.cx - R, x1 = g.paperX + 10;
+      const x = x0 + (x1 - x0) * e;
+      const y = g.lineY != null ? g.cy + (g.lineY - g.cy) * e + Math.sin(k * Math.PI) * L.dy * 0.4 : g.cy + Math.sin(k * Math.PI) * L.dy;
+      ctx.globalAlpha = Math.min(1, k * 6) * (1 - Math.pow(k, 4));
+      ctx.font = `600 ${L.size}px "Segoe UI", Arial, sans-serif`;
+      ctx.fillText(L.ch, x, y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  return {
+    start() {
+      if (raf) return;
+      readColors();
+      requestAnimationFrame(() => { resize(); raf = requestAnimationFrame(frame); });
+    },
+    stop() { if (raf) cancelAnimationFrame(raf); raf = null; parts.length = letters.length = queue.length = 0; },
+    set(s, p, d) { stage = s; progress = p || 0; dl = d || 0; },
+    feed(text) {
+      for (const ch of text.replace(/\s+/g, '')) queue.push(ch);
+      if (queue.length > 240) queue.splice(0, queue.length - 240);
+      pulse = 1;
+    },
+  };
+})();
+
+/* ------------------------------------------------------------ lifecycle */
+
+setInterval(() => fetch('/ping').catch(() => {}), 15000);
+
+// Internet is only needed until the model has been downloaded once
+async function netCheck() {
+  try {
+    const n = await api('/netcheck');
+    $('#offline').hidden = n.model_cached || n.online;
+  } catch (_) {}
+}
+window.addEventListener('online', netCheck);
+window.addEventListener('offline', netCheck);
+setInterval(() => { if (!$('#offline').hidden) netCheck(); }, 15000);
+window.addEventListener('pagehide', () => navigator.sendBeacon('/bye'));
+
+function shownInThisWindow(job) {
+  try { return sessionStorage.getItem('shownJob') === String(job); } catch (_) { return false; }
+}
+
+(async function init() {
+  try {
+    const p = await api('/ping');
+    $('#ver').textContent = p.version;
+    $('#author').textContent = p.author;
+    $('#author-link').title = p.repo_url;
+    $('#credit').hidden = false;
+    netCheck();
+    setKeyState(await api('/settings'));
+    const s = await api('/status?since=0');
+    if (s.running) enterWork(s.file);
+    else if (s.result && s.job && shownInThisWindow(s.job)) finish(s);
+  } catch (_) {}
+})();
+</script>
+</body>
+</html>

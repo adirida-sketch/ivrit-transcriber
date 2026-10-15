@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Runtime output (when running from the source folder)
+Transcripts/
+.incoming/
+*.part
+transcriber.log
+settings.json
+models/
+dev/requests.jsonl
+
+# Audio / transcription results
+*.m4a
+*.mp3
+*.wav
+*.ogg
+*.oga
+*.opus
+*.flac
+*.aac
+*.wma
+*.amr
+*.3gp
+*.mp4
+*.m4v
+*.mov
+*.webm
+*.mkv
+*.srt
+
+# Build output - rebuild with build_setup.ps1
+dist/
+
+# Local private files (recordings, originals) - never commit
+PRIVATE/
+
+# Developer notes and test tools - kept on the author's machine only
+CLAUDE.md
+dev/
