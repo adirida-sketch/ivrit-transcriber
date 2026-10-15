@@ -155,6 +155,8 @@
   .badge.cloud { color: var(--accent); background: var(--accent-soft); }
   .legend { margin-top: 10px; font-size: 12.5px; color: var(--muted); display: grid; gap: 5px; }
   .legend .badge { margin-inline: 0 6px; }
+  .xcost { margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+  .xcost b { color: var(--ink); font-weight: 600; }
   .badge svg { vertical-align: -2px; margin-inline-end: 4px; }
   .ico { display: inline-flex; vertical-align: -2px; margin-inline-start: 6px; font-style: normal; }
   .ico.local { color: var(--ok); }
@@ -361,6 +363,7 @@
             <div class="pre-only"><em class="badge local"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>מקומי</em>רץ על המחשב, ושום דבר לא יוצא ממנו. בפעם הראשונה יורד מודל קטן (כ-33MB). כשמספר הדוברים ידוע, התוצאה מדויקת יותר.</div>
             <div><em class="badge cloud"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.2 4.5 4.5 0 0 0 7 19z"/></svg>אינטרנט</em>טקסט התמלול נשלח ל-Claude של Anthropic בסוף התמלול. ההקלטה עצמה לא יוצאת מהמחשב. <span class="pre-only">עם הפרדת דוברים, Claude גם בודק לפי התוכן מי אמר שורות שהקול לא בטוח בהן.</span></div>
           </div>
+          <div class="xcost" id="xcost" hidden></div>
           <div class="keyrow" id="keyset" hidden>
             <span class="ok">✓</span><span>מפתח API של Claude מוגדר <bdi id="keyhint" dir="ltr"></bdi></span>
             <button class="link" id="keychange">החלפה</button>
@@ -496,6 +499,7 @@ const MODEL_MB = 1550;
 
 let view = 'pick';
 let uploaded = null;      // {name, size}
+let audioSecs = null;     // length of the loaded recording (read by the browser), for the cost estimate
 let beam = 5;
 let linesSeen = 0;
 let pollTimer = null;
@@ -567,10 +571,27 @@ window.addEventListener('drop', (e) => {
 });
 const canPick = () => view === 'pick' || view === 'ready' || view === 'done' || view === 'error';
 
+// the browser reads the length of the recording, so the cost estimate is ready before transcribing
+function readDuration(file) {
+  try {
+    const url = URL.createObjectURL(file);
+    const a = new Audio();
+    a.preload = 'metadata';
+    a.onloadedmetadata = () => {
+      if (isFinite(a.duration) && a.duration > 0) { audioSecs = a.duration; updateExtras(); }
+      URL.revokeObjectURL(url);
+    };
+    a.onerror = () => URL.revokeObjectURL(url);
+    a.src = url;
+  } catch (_) {}
+}
+
 function handleFile(file) {
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   if (!EXTS.includes(ext)) { toast('סוג הקובץ לא נתמך: .' + ext); return; }
   uploaded = null;
+  audioSecs = null;
+  readDuration(file);
   show('ready');
   $('#fname').textContent = file.name;
   $('#fsub').textContent = fmtSize(file.size) + ' · טוען…';
@@ -616,8 +637,48 @@ const THE = { title: 'הכותרת', summary: 'הסיכום', tasks: 'המשימ
 // "א", "א וב", "א, ב וג"
 const joinHe = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' ו' + a[a.length - 1]);
 
+// Rough Claude cost (claude-opus-5-5: $4 per million tokens sent, $20 per million received).
+// Hebrew speech is about 950 characters a minute and a token is about 0.75 of a character, so ~700 tokens a minute.
+// With speakers the transcript is sent twice (plain + numbered lines). The answer includes the model's thinking.
+// Keep in step with the table in README.md.
+const IN_PRICE = 4 / 1e6, OUT_PRICE = 20 / 1e6;
+function costRange(tokens, kinds, speakers) {
+  const sent = 2000 + tokens * (speakers ? 2 : 1);
+  const titleOnly = kinds.length === 1 && kinds[0] === 'title';
+  let lo = (titleOnly ? 500 : 1500) + tokens * 0.03, hi = (titleOnly ? 1500 : 4000) + tokens * 0.08;
+  if (speakers) { lo += tokens * 0.05; hi += tokens * 0.12; }
+  return [sent * IN_PRICE + lo * OUT_PRICE, sent * IN_PRICE + hi * OUT_PRICE];
+}
+function fmtMoney(usd) {
+  const c = Math.max(1, Math.round(usd * 100));
+  return c < 100 ? c + ' סנט' : (c / 100).toFixed(2) + ' דולר';
+}
+function updateCost(kinds) {
+  const box = $('#xcost');
+  let tokens = null, speakers = false, mins = null;
+  if (view === 'done' && result && result.text) {
+    tokens = result.text.length * 0.75;
+    speakers = !!result.speakers;
+    mins = result.text.length / 950;
+  } else if (view === 'ready' && audioSecs) {
+    mins = audioSecs / 60;
+    tokens = mins * 700;
+    speakers = chosenSpeakers() !== null;
+  }
+  if (!kinds.length || tokens === null) { box.hidden = true; return; }
+  const [lo, hi] = costRange(tokens, kinds, speakers);
+  const len = mins < 1 ? 'פחות מדקה' : 'בערך ' + Math.round(mins) + ' דקות';
+  box.innerHTML = '';
+  box.append('עלות משוערת ב-Claude לשיחה הזו (' + len + '): ');
+  const b = document.createElement('b');
+  b.textContent = 'בין ' + fmtMoney(lo) + ' ל-' + fmtMoney(hi);
+  box.append(b, '. התשלום הוא ל-Anthropic, לפי אורך הטקסט.');
+  box.hidden = false;
+}
+
 function updateExtras() {
   const x = chosenExtras();
+  updateCost(x);
   const all = xboxes().filter((b) => b.checked).map((b) => b.dataset.x);
   const listed = view === 'done' ? x : all;   // speaker separation can only be chosen before transcribing
   $('#xcount').textContent = listed.length ? '· ' + listed.map((k) => XNAMES[k]).join(', ') : '';
